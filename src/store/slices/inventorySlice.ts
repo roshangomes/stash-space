@@ -3,12 +3,20 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export interface Equipment {
   id: string;
   name: string;
-  category: string;
+  brand: string;
+  model: string;
+  category: 'cameras' | 'lenses' | 'lighting' | 'audio' | 'stabilization' | 'accessories';
+  subcategory: string;
   description: string;
   dailyRate: number;
+  weeklyRate: number;
   availability: 'available' | 'rented' | 'maintenance';
   images: string[];
   specifications: Record<string, string>;
+  condition: 'excellent' | 'good' | 'fair';
+  yearPurchased: string;
+  serialNumber: string;
+  accessories: string[];
   createdAt: string;
 }
 

@@ -31,7 +31,7 @@ export const TopNavigation: React.FC = () => {
         <div className="flex items-center gap-4">
           <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
           <h1 className="text-xl font-semibold text-foreground">
-            RentPro Dashboard
+            FilmGear Pro
           </h1>
         </div>
 
@@ -40,7 +40,7 @@ export const TopNavigation: React.FC = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search equipment, bookings..."
+              placeholder="Search cameras, lenses, lighting..."
               className="pl-10 bg-background"
             />
           </div>

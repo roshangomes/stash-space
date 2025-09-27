@@ -2,12 +2,13 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Package,
+  Camera,
   Calendar,
   User,
   Settings,
   BarChart3,
-  ShoppingBag,
+  Film,
+  Lightbulb,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -28,22 +29,22 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    title: 'Inventory',
+    title: 'Film Equipment',
     url: '/inventory',
-    icon: Package,
+    icon: Camera,
   },
   {
-    title: 'Bookings',
+    title: 'Rental Bookings',
     url: '/bookings',
     icon: Calendar,
   },
   {
-    title: 'Orders',
+    title: 'Active Rentals',
     url: '/orders',
-    icon: ShoppingBag,
+    icon: Film,
   },
   {
-    title: 'Analytics',
+    title: 'Reports',
     url: '/analytics',
     icon: BarChart3,
   },
@@ -86,13 +87,13 @@ export function AppSidebar() {
           {!collapsed ? (
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <Package className="w-4 h-4 text-white" />
+                <Film className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-lg text-foreground">RentPro</span>
+              <span className="font-bold text-lg text-foreground">FilmGear Pro</span>
             </div>
           ) : (
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center mx-auto">
-              <Package className="w-4 h-4 text-white" />
+              <Film className="w-4 h-4 text-white" />
             </div>
           )}
         </div>

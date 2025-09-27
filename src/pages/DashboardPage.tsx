@@ -1,14 +1,17 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { 
-  Package, 
+  Camera, 
   Calendar, 
   DollarSign, 
   TrendingUp,
   AlertCircle,
   Clock,
   CheckCircle,
-  Users
+  Users,
+  Film,
+  Mic,
+  Lightbulb
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,30 +20,30 @@ import { RootState } from '@/store/store';
 
 const stats = [
   {
-    title: 'Total Equipment',
-    value: '47',
-    change: '+12%',
-    changeType: 'positive' as const,
-    icon: Package,
-  },
-  {
-    title: 'Active Bookings',
-    value: '23',
+    title: 'Film Equipment',
+    value: '127',
     change: '+8%',
     changeType: 'positive' as const,
-    icon: Calendar,
+    icon: Camera,
+  },
+  {
+    title: 'Active Rentals',
+    value: '24',
+    change: '+12%',
+    changeType: 'positive' as const,
+    icon: Film,
   },
   {
     title: 'Monthly Revenue',
-    value: '₹45,230',
-    change: '+23%',
+    value: '₹1,85,430',
+    change: '+28%',
     changeType: 'positive' as const,
     icon: DollarSign,
   },
   {
-    title: 'Utilization Rate',
-    value: '73%',
-    change: '+5%',
+    title: 'Equipment Utilization',
+    value: '78%',
+    change: '+6%',
     changeType: 'positive' as const,
     icon: TrendingUp,
   },
@@ -49,46 +52,46 @@ const stats = [
 const recentBookings = [
   {
     id: '1',
-    equipment: 'JCB Excavator 320',
-    customer: 'Sharma Construction',
+    equipment: 'Canon EOS R5 + RF 24-70mm',
+    customer: 'Mumbai Film Productions',
     date: '2024-01-15',
     status: 'confirmed' as const,
-    amount: '₹12,500',
+    amount: '₹18,500',
   },
   {
     id: '2',
-    equipment: 'Concrete Mixer Large',
-    customer: 'BuildCorp Ltd',
+    equipment: 'ARRI SkyPanel S60-C Kit',
+    customer: 'Creative Studios Delhi',
     date: '2024-01-16',
     status: 'pending' as const,
-    amount: '₹8,900',
+    amount: '₹13,500',
   },
   {
     id: '3',
-    equipment: 'Tower Crane',
-    customer: 'Metro Projects',
+    equipment: 'Sony FX30 + DJI Ronin RS3',
+    customer: 'Bangalore Documentary Co.',
     date: '2024-01-17',
     status: 'completed' as const,
-    amount: '₹25,000',
+    amount: '₹28,000',
   },
 ];
 
 const alerts = [
   {
     id: '1',
-    message: 'Hydraulic Pump needs maintenance',
+    message: 'Canon RF 85mm lens needs cleaning service',
     type: 'warning' as const,
     time: '2 hours ago',
   },
   {
     id: '2',
-    message: 'New booking request for Excavator',
+    message: 'New rental request for Sony A7S III camera',
     type: 'info' as const,
     time: '4 hours ago',
   },
   {
     id: '3',
-    message: 'Payment received from BuildCorp',
+    message: 'Payment received from Mumbai Film Productions',
     type: 'success' as const,
     time: '6 hours ago',
   },
@@ -126,10 +129,10 @@ export const DashboardPage: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">
-          Welcome back, {user?.name || 'Vendor'}!
+          Welcome back, {user?.name || 'Film Equipment Vendor'}!
         </h1>
         <p className="text-muted-foreground">
-          Here's what's happening with your equipment rental business today.
+          Here's what's happening with your video production equipment rental business today.
         </p>
       </div>
 
@@ -158,11 +161,11 @@ export const DashboardPage: React.FC = () => {
         <Card className="shadow-soft bg-gradient-card border-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              Recent Bookings
+              <Film className="w-5 h-5 text-primary" />
+              Recent Equipment Rentals
             </CardTitle>
             <CardDescription>
-              Latest equipment rental requests and bookings
+              Latest filmmaking equipment rental requests and bookings
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -185,7 +188,7 @@ export const DashboardPage: React.FC = () => {
               ))}
             </div>
             <Button variant="outline" className="w-full mt-4">
-              View All Bookings
+              View All Rentals
             </Button>
           </CardContent>
         </Card>
@@ -195,10 +198,10 @@ export const DashboardPage: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-primary" />
-              Alerts & Notifications
+              Equipment Alerts
             </CardTitle>
             <CardDescription>
-              Important updates and maintenance reminders
+              Important updates and maintenance reminders for your gear
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -228,22 +231,22 @@ export const DashboardPage: React.FC = () => {
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
           <CardDescription>
-            Common tasks and shortcuts for managing your business
+            Common tasks for managing your film equipment rental business
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3">
             <Button variant="gradient" className="h-12">
-              <Package className="w-4 h-4 mr-2" />
-              Add Equipment
+              <Camera className="w-4 h-4 mr-2" />
+              Add Film Gear
             </Button>
             <Button variant="outline" className="h-12">
               <Users className="w-4 h-4 mr-2" />
-              Manage Customers
+              Manage Clients
             </Button>
             <Button variant="outline" className="h-12">
               <TrendingUp className="w-4 h-4 mr-2" />
-              View Reports
+              Rental Reports
             </Button>
           </div>
         </CardContent>
