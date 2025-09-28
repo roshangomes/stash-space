@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Package } from 'lucide-react';
+import { Eye, EyeOff, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { loginSuccess } from '@/store/slices/authSlice';
 
-export const LoginPage: React.FC = () => {
+export const CustomerLoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,16 +26,16 @@ export const LoginPage: React.FC = () => {
     setTimeout(() => {
       if (email && password) {
         dispatch(loginSuccess({
-          id: '1',
+          id: '2',
           email,
-          name: 'John Vendor',
-          role: 'vendor',
+          name: 'John Customer',
+          role: 'customer',
         }));
         toast({
           title: 'Login successful',
-          description: 'Welcome back to RentPro!',
+          description: 'Welcome to FilmGear Pro!',
         });
-        navigate('/dashboard');
+        navigate('/customer/dashboard');
       } else {
         toast({
           title: 'Login failed',
@@ -54,17 +54,17 @@ export const LoginPage: React.FC = () => {
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-primary">
-              <Package className="w-6 h-6 text-white" />
+              <Camera className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-foreground">RentPro</span>
+            <span className="text-2xl font-bold text-foreground">FilmGear Pro</span>
           </div>
         </div>
 
         <Card className="shadow-strong bg-gradient-card border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Vendor Login</CardTitle>
+            <CardTitle className="text-2xl text-center">Customer Login</CardTitle>
             <CardDescription className="text-center">
-              Sign in to your vendor dashboard
+              Sign in to browse and rent equipment
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -74,7 +74,7 @@ export const LoginPage: React.FC = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="vendor@example.com"
+                  placeholder="customer@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -110,7 +110,7 @@ export const LoginPage: React.FC = () => {
               </div>
               <div className="flex items-center justify-between">
                 <Link
-                  to="/forgot-password"
+                  to="/customer/forgot-password"
                   className="text-sm text-primary hover:underline"
                 >
                   Forgot password?
@@ -128,14 +128,14 @@ export const LoginPage: React.FC = () => {
             <div className="mt-6 text-center space-y-2">
               <span className="text-sm text-muted-foreground">
                 Don't have an account?{' '}
-                <Link to="/vendor/register" className="text-primary hover:underline font-medium">
+                <Link to="/customer/register" className="text-primary hover:underline font-medium">
                   Sign up
                 </Link>
               </span>
               <div className="text-sm text-muted-foreground">
-                Are you a customer?{' '}
-                <Link to="/customer/login" className="text-primary hover:underline font-medium">
-                  Customer Login
+                Are you a vendor?{' '}
+                <Link to="/vendor/login" className="text-primary hover:underline font-medium">
+                  Vendor Login
                 </Link>
               </div>
             </div>

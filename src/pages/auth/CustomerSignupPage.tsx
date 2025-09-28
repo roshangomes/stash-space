@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Package } from 'lucide-react';
+import { Eye, EyeOff, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,10 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { loginSuccess } from '@/store/slices/authSlice';
 
-export const LoginPage: React.FC = () => {
+export const CustomerSignupPage: React.FC = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -22,24 +25,34 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock authentication - replace with actual API call
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Password mismatch',
+        description: 'Passwords do not match. Please try again.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Mock registration - replace with actual API call
     setTimeout(() => {
-      if (email && password) {
+      if (name && email && password) {
         dispatch(loginSuccess({
-          id: '1',
+          id: '2',
           email,
-          name: 'John Vendor',
-          role: 'vendor',
+          name,
+          role: 'customer',
         }));
         toast({
-          title: 'Login successful',
-          description: 'Welcome back to RentPro!',
+          title: 'Account created successfully',
+          description: 'Welcome to FilmGear Pro!',
         });
-        navigate('/dashboard');
+        navigate('/customer/dashboard');
       } else {
         toast({
-          title: 'Login failed',
-          description: 'Please check your credentials and try again.',
+          title: 'Registration failed',
+          description: 'Please fill in all fields and try again.',
           variant: 'destructive',
         });
       }
@@ -54,27 +67,39 @@ export const LoginPage: React.FC = () => {
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-primary">
-              <Package className="w-6 h-6 text-white" />
+              <Camera className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-foreground">RentPro</span>
+            <span className="text-2xl font-bold text-foreground">FilmGear Pro</span>
           </div>
         </div>
 
         <Card className="shadow-strong bg-gradient-card border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Vendor Login</CardTitle>
+            <CardTitle className="text-2xl text-center">Create Account</CardTitle>
             <CardDescription className="text-center">
-              Sign in to your vendor dashboard
+              Join FilmGear Pro to rent professional equipment
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="h-12"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="vendor@example.com"
+                  placeholder="customer@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -108,13 +133,32 @@ export const LoginPage: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot password?
-                </Link>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="h-12 pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-12 w-12"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
               <Button
                 type="submit"
@@ -122,20 +166,20 @@ export const LoginPage: React.FC = () => {
                 variant="gradient"
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? 'Creating account...' : 'Create account'}
               </Button>
             </form>
             <div className="mt-6 text-center space-y-2">
               <span className="text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link to="/vendor/register" className="text-primary hover:underline font-medium">
-                  Sign up
+                Already have an account?{' '}
+                <Link to="/customer/login" className="text-primary hover:underline font-medium">
+                  Sign in
                 </Link>
               </span>
               <div className="text-sm text-muted-foreground">
-                Are you a customer?{' '}
-                <Link to="/customer/login" className="text-primary hover:underline font-medium">
-                  Customer Login
+                Are you a vendor?{' '}
+                <Link to="/vendor/login" className="text-primary hover:underline font-medium">
+                  Vendor Login
                 </Link>
               </div>
             </div>
