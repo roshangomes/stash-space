@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { Link } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
@@ -231,10 +232,12 @@ export const InventoryPage: React.FC = () => {
             Manage your filmmaking gear inventory and availability
           </p>
         </div>
-        <Button variant="gradient" className="shadow-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Film Equipment
-        </Button>
+        <Link to="/inventory/add">
+          <Button variant="gradient" className="shadow-primary">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Film Equipment
+          </Button>
+        </Link>
       </div>
 
       {/* Stats Cards */}

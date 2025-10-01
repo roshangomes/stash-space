@@ -14,6 +14,7 @@ import { CustomerLoginPage } from './pages/auth/CustomerLoginPage';
 import { CustomerSignupPage } from './pages/auth/CustomerSignupPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { InventoryPage } from './pages/InventoryPage';
+import { AddFilmGearPage } from './pages/AddFilmGearPage';
 import { CustomerDashboard } from './pages/customer/CustomerDashboard';
 import { BrowseEquipment } from './pages/customer/BrowseEquipment';
 import { MyBookings } from './pages/customer/MyBookings';
@@ -45,6 +46,7 @@ const App = () => (
             <Route element={<ProtectedRoute requiredRole="vendor"><DashboardLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/inventory/add" element={<AddFilmGearPage />} />
               <Route path="/bookings" element={<div className="p-6"><h1 className="text-2xl font-bold">Vendor Bookings</h1><p className="text-muted-foreground">Coming soon...</p></div>} />
               <Route path="/orders" element={<div className="p-6"><h1 className="text-2xl font-bold">Orders</h1><p className="text-muted-foreground">Coming soon...</p></div>} />
               <Route path="/analytics" element={<div className="p-6"><h1 className="text-2xl font-bold">Analytics</h1><p className="text-muted-foreground">Coming soon...</p></div>} />

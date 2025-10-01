@@ -47,9 +47,6 @@ export const LandingPage: React.FC = () => {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline">
-              Watch Demo
-            </Button>
           </div>
         </div>
       </section>
