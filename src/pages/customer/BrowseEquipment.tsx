@@ -244,8 +244,8 @@ export const BrowseEquipment: React.FC = () => {
                 
                 <div className="flex items-center justify-between pt-2">
                   <div>
-                    <p className="text-lg font-bold">${item.dailyRate}/day</p>
-                    <p className="text-xs text-muted-foreground">${item.weeklyRate}/week</p>
+                    <p className="text-lg font-bold">₹{item.dailyRate}/day</p>
+                    <p className="text-xs text-muted-foreground">₹{item.weeklyRate}/week</p>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" asChild>

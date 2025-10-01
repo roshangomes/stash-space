@@ -186,9 +186,9 @@ export const MyBookings: React.FC = () => {
 
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                       <div className="space-y-1">
-                        <p className="text-2xl font-bold">${booking.totalAmount}</p>
+                        <p className="text-2xl font-bold">₹{booking.totalAmount}</p>
                         <p className="text-sm text-muted-foreground">
-                          ${booking.dailyRate}/day
+                          ₹{booking.dailyRate}/day
                         </p>
                       </div>
 

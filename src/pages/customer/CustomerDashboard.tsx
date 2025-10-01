@@ -95,7 +95,7 @@ export const CustomerDashboard: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$2,350</div>
+            <div className="text-2xl font-bold">₹2,350</div>
             <p className="text-xs text-muted-foreground">
               This year
             </p>
@@ -163,7 +163,7 @@ export const CustomerDashboard: React.FC = () => {
                   <p className="text-sm text-muted-foreground">{item.vendor}</p>
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary">{item.category}</Badge>
-                    <span className="text-sm font-medium">${item.dailyRate}/day</span>
+                    <span className="text-sm font-medium">₹{item.dailyRate}/day</span>
                   </div>
                 </div>
               </div>
@@ -191,7 +191,7 @@ export const CustomerDashboard: React.FC = () => {
                   <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'}>
                     {booking.status}
                   </Badge>
-                  <p className="text-sm font-medium">${booking.total}</p>
+                  <p className="text-sm font-medium">₹{booking.total}</p>
                 </div>
               </div>
             ))}
