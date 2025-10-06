@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useForm } from 'react-hook-form';
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const equipmentSchema = z.object({
@@ -33,6 +33,7 @@ type EquipmentFormData = z.infer<typeof equipmentSchema>;
 export const AddFilmGearPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [imageFiles, setImageFiles] = useState<string[]>([]);
 
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
@@ -51,6 +52,23 @@ export const AddFilmGearPage: React.FC = () => {
     },
   });
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImageFiles((prev) => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const onSubmit = (data: EquipmentFormData) => {
     const newEquipment: Equipment = {
       id: `equip-${Date.now()}`,
@@ -63,7 +81,7 @@ export const AddFilmGearPage: React.FC = () => {
       dailyRate: data.dailyRate,
       weeklyRate: data.weeklyRate,
       availability: 'available',
-      images: [],
+      images: imageFiles,
       specifications: {},
       condition: data.condition,
       yearPurchased: data.yearPurchased,
@@ -277,6 +295,50 @@ export const AddFilmGearPage: React.FC = () => {
                   </FormItem>
                 )}
               />
+
+              <div className="space-y-4">
+                <div>
+                  <FormLabel>Equipment Images</FormLabel>
+                  <div className="mt-2">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          Click to upload images
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {imageFiles.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {imageFiles.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={image}
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-2 right-2 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="flex gap-4 justify-end pt-4">
                 <Button type="button" variant="outline" onClick={() => navigate('/inventory')}>
