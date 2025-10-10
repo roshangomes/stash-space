@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { Camera, Mail, Phone } from 'lucide-react';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -84,16 +86,27 @@ export const VendorSignupPage: React.FC = () => {
     }, 1000);
   };
 
-  const handleResendOTP = () => {
+  const handleResendOTP = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      toast.success(`OTP resent to your ${signupMethod === 'email' ? 'email' : 'phone number'}`);
+    try {
+      if (signupMethod === 'phone') {
+        const appVerifier = window.recaptchaVerifier;
+        const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier);
+        setConfirmationResult(confirmation);
+        toast.success('OTP resent to your phone number');
+      } else {
+        toast.success('OTP resent to your email');
+      }
+    } catch (error: any) {
+      toast.error('Failed to resend OTP. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-secondary flex items-center justify-center p-6">
+      <div id="recaptcha-container"></div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">

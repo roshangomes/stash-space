@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { Camera, Mail, Phone } from 'lucide-react';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,8 +26,21 @@ export const CustomerSignupPage: React.FC = () => {
   const [otp, setOtp] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Setup reCAPTCHA verifier
+  useEffect(() => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          // reCAPTCHA solved
+        }
+      });
+    }
+  }, []);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,12 +65,28 @@ export const CustomerSignupPage: React.FC = () => {
       return;
     }
 
-    // Mock OTP sending - replace with actual API call
-    setTimeout(() => {
-      toast.success(`OTP sent to your ${signupMethod === 'email' ? 'email' : 'phone number'}`);
-      setStep('otp');
+    try {
+      if (signupMethod === 'phone') {
+        // Firebase Phone OTP
+        const appVerifier = window.recaptchaVerifier;
+        const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier);
+        setConfirmationResult(confirmation);
+        toast.success('OTP sent to your phone number');
+        setStep('otp');
+      } else {
+        // Email OTP - Firebase doesn't support email OTP natively
+        // For demo, we'll use mock implementation
+        // In production, use email/password or implement custom backend with SendGrid/similar
+        toast.info('Email OTP requires custom backend implementation');
+        toast.success('Demo OTP sent to your email (use any 6-digit code)');
+        setStep('otp');
+      }
+    } catch (error: any) {
+      console.error('Error sending OTP:', error);
+      toast.error(error.message || 'Failed to send OTP. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
@@ -68,31 +99,60 @@ export const CustomerSignupPage: React.FC = () => {
       return;
     }
 
-    // Mock OTP verification - replace with actual API call
-    setTimeout(() => {
-      // For demo purposes, accept any 6-digit OTP
-      dispatch(loginSuccess({
-        id: '2',
-        email: email || phone,
-        name,
-        role: 'customer',
-      }));
-      toast.success('Account created successfully! Welcome to FilmGear Pro.');
-      navigate('/customer/dashboard');
+    try {
+      if (signupMethod === 'phone' && confirmationResult) {
+        // Verify Firebase phone OTP
+        const result = await confirmationResult.confirm(otp);
+        const user = result.user;
+        
+        dispatch(loginSuccess({
+          id: user.uid,
+          email: phone,
+          name,
+          role: 'customer',
+        }));
+        toast.success('Account created successfully! Welcome to FilmGear Pro.');
+        navigate('/customer/dashboard');
+      } else {
+        // Email - mock verification (implement custom backend in production)
+        dispatch(loginSuccess({
+          id: '2',
+          email: email || phone,
+          name,
+          role: 'customer',
+        }));
+        toast.success('Account created successfully! Welcome to FilmGear Pro.');
+        navigate('/customer/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Error verifying OTP:', error);
+      toast.error('Invalid OTP. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  const handleResendOTP = () => {
+  const handleResendOTP = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      toast.success(`OTP resent to your ${signupMethod === 'email' ? 'email' : 'phone number'}`);
+    try {
+      if (signupMethod === 'phone') {
+        const appVerifier = window.recaptchaVerifier;
+        const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier);
+        setConfirmationResult(confirmation);
+        toast.success('OTP resent to your phone number');
+      } else {
+        toast.success('OTP resent to your email');
+      }
+    } catch (error: any) {
+      toast.error('Failed to resend OTP. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-secondary flex items-center justify-center p-6">
+      <div id="recaptcha-container"></div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
