@@ -27,8 +27,21 @@ export const VendorSignupPage: React.FC = () => {
   const [otp, setOtp] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Setup reCAPTCHA verifier
+  useEffect(() => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          // reCAPTCHA solved
+        }
+      });
+    }
+  }, []);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,12 +66,26 @@ export const VendorSignupPage: React.FC = () => {
       return;
     }
 
-    // Mock OTP sending - replace with actual API call
-    setTimeout(() => {
-      toast.success(`OTP sent to your ${signupMethod === 'email' ? 'email' : 'phone number'}`);
-      setStep('otp');
+    try {
+      if (signupMethod === 'phone') {
+        // Firebase Phone OTP
+        const appVerifier = window.recaptchaVerifier;
+        const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier);
+        setConfirmationResult(confirmation);
+        toast.success('OTP sent to your phone number');
+        setStep('otp');
+      } else {
+        // Email OTP - Firebase doesn't support email OTP natively
+        toast.info('Email OTP requires custom backend implementation');
+        toast.success('Demo OTP sent to your email (use any 6-digit code)');
+        setStep('otp');
+      }
+    } catch (error: any) {
+      console.error('Error sending OTP:', error);
+      toast.error(error.message || 'Failed to send OTP. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
@@ -71,19 +98,37 @@ export const VendorSignupPage: React.FC = () => {
       return;
     }
 
-    // Mock OTP verification - replace with actual API call
-    setTimeout(() => {
-      // For demo purposes, accept any 6-digit OTP
-      dispatch(loginSuccess({
-        id: '1',
-        email: email || phone,
-        name,
-        role: 'vendor',
-      }));
-      toast.success('Account created successfully! Welcome to FilmGear Pro.');
-      navigate('/dashboard');
+    try {
+      if (signupMethod === 'phone' && confirmationResult) {
+        // Verify Firebase phone OTP
+        const result = await confirmationResult.confirm(otp);
+        const user = result.user;
+        
+        dispatch(loginSuccess({
+          id: user.uid,
+          email: phone,
+          name,
+          role: 'vendor',
+        }));
+        toast.success('Account created successfully! Welcome to FilmGear Pro.');
+        navigate('/dashboard');
+      } else {
+        // Email - mock verification (implement custom backend in production)
+        dispatch(loginSuccess({
+          id: '1',
+          email: email || phone,
+          name,
+          role: 'vendor',
+        }));
+        toast.success('Account created successfully! Welcome to FilmGear Pro.');
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Error verifying OTP:', error);
+      toast.error('Invalid OTP. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleResendOTP = async () => {
