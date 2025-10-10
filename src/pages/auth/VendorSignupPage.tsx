@@ -13,7 +13,7 @@ import { loginSuccess } from '@/store/slices/authSlice';
 
 type SignupMethod = 'email' | 'phone';
 
-export const CustomerSignupPage: React.FC = () => {
+export const VendorSignupPage: React.FC = () => {
   const [signupMethod, setSignupMethod] = useState<SignupMethod>('email');
   const [step, setStep] = useState<'details' | 'otp'>('details');
   
@@ -21,6 +21,7 @@ export const CustomerSignupPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [otp, setOtp] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
@@ -32,8 +33,8 @@ export const CustomerSignupPage: React.FC = () => {
     setIsLoading(true);
 
     // Validate fields
-    if (!name) {
-      toast.error('Please enter your name');
+    if (!name || !businessName) {
+      toast.error('Please fill in all required fields');
       setIsLoading(false);
       return;
     }
@@ -72,13 +73,13 @@ export const CustomerSignupPage: React.FC = () => {
     setTimeout(() => {
       // For demo purposes, accept any 6-digit OTP
       dispatch(loginSuccess({
-        id: '2',
+        id: '1',
         email: email || phone,
         name,
-        role: 'customer',
+        role: 'vendor',
       }));
       toast.success('Account created successfully! Welcome to FilmGear Pro.');
-      navigate('/customer/dashboard');
+      navigate('/dashboard');
       setIsLoading(false);
     }, 1000);
   };
@@ -106,10 +107,10 @@ export const CustomerSignupPage: React.FC = () => {
 
         <Card className="shadow-strong bg-gradient-card border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Create Account</CardTitle>
+            <CardTitle className="text-2xl text-center">Vendor Registration</CardTitle>
             <CardDescription className="text-center">
               {step === 'details' 
-                ? 'Join FilmGear Pro to rent professional equipment'
+                ? 'Create your vendor account to start listing equipment'
                 : 'Enter the OTP sent to verify your account'}
             </CardDescription>
           </CardHeader>
@@ -124,6 +125,19 @@ export const CustomerSignupPage: React.FC = () => {
                     placeholder="John Doe"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    required
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="businessName">Business Name</Label>
+                  <Input
+                    id="businessName"
+                    type="text"
+                    placeholder="Your Business Name"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
                     required
                     className="h-12"
                   />
@@ -145,7 +159,7 @@ export const CustomerSignupPage: React.FC = () => {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="customer@example.com"
+                      placeholder="vendor@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -237,17 +251,18 @@ export const CustomerSignupPage: React.FC = () => {
                 </div>
               </form>
             )}
+
             <div className="mt-6 text-center space-y-2">
               <span className="text-sm text-muted-foreground">
                 Already have an account?{' '}
-                <Link to="/customer/login" className="text-primary hover:underline font-medium">
+                <Link to="/vendor/login" className="text-primary hover:underline font-medium">
                   Sign in
                 </Link>
               </span>
               <div className="text-sm text-muted-foreground">
-                Are you a vendor?{' '}
-                <Link to="/vendor/login" className="text-primary hover:underline font-medium">
-                  Vendor Login
+                Are you a customer?{' '}
+                <Link to="/customer/signup" className="text-primary hover:underline font-medium">
+                  Customer Registration
                 </Link>
               </div>
             </div>

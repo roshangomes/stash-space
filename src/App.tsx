@@ -12,6 +12,7 @@ import { CustomerLayout } from './components/layout/CustomerLayout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { CustomerLoginPage } from './pages/auth/CustomerLoginPage';
 import { CustomerSignupPage } from './pages/auth/CustomerSignupPage';
+import { VendorSignupPage } from './pages/auth/VendorSignupPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { InventoryPage } from './pages/InventoryPage';
 import { AddFilmGearPage } from './pages/AddFilmGearPage';
@@ -36,11 +37,13 @@ const App = () => (
 
             {/* Vendor Auth Routes */}
             <Route path="/vendor/login" element={<LoginPage />} />
+            <Route path="/vendor/register" element={<VendorSignupPage />} />
             <Route path="/login" element={<Navigate to="/vendor/login" replace />} />
 
             {/* Customer Auth Routes */}
             <Route path="/customer/login" element={<CustomerLoginPage />} />
             <Route path="/customer/register" element={<CustomerSignupPage />} />
+            <Route path="/customer/signup" element={<CustomerSignupPage />} />
 
             {/* Vendor Protected Routes */}
             <Route element={<ProtectedRoute requiredRole="vendor"><DashboardLayout /></ProtectedRoute>}>
