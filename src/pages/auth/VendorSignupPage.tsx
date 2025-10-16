@@ -12,12 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import { loginSuccess } from '@/store/slices/authSlice';
+import { AadhaarKycFlow, KycData } from '@/components/kyc/AadhaarKycFlow';
 
 type SignupMethod = 'email' | 'phone';
 
 export const VendorSignupPage: React.FC = () => {
   const [signupMethod, setSignupMethod] = useState<SignupMethod>('email');
-  const [step, setStep] = useState<'details' | 'otp'>('details');
+  const [step, setStep] = useState<'details' | 'otp' | 'kyc'>('details');
   
   // Form fields
   const [name, setName] = useState('');
@@ -28,6 +29,7 @@ export const VendorSignupPage: React.FC = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [kycData, setKycData] = useState<KycData | null>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -101,27 +103,13 @@ export const VendorSignupPage: React.FC = () => {
     try {
       if (signupMethod === 'phone' && confirmationResult) {
         // Verify Firebase phone OTP
-        const result = await confirmationResult.confirm(otp);
-        const user = result.user;
-        
-        dispatch(loginSuccess({
-          id: user.uid,
-          email: phone,
-          name,
-          role: 'vendor',
-        }));
-        toast.success('Account created successfully! Welcome to FilmGear Pro.');
-        navigate('/dashboard');
+        await confirmationResult.confirm(otp);
+        toast.success('Phone verified! Now complete KYC verification.');
+        setStep('kyc');
       } else {
-        // Email - mock verification (implement custom backend in production)
-        dispatch(loginSuccess({
-          id: '1',
-          email: email || phone,
-          name,
-          role: 'vendor',
-        }));
-        toast.success('Account created successfully! Welcome to FilmGear Pro.');
-        navigate('/dashboard');
+        // Email - mock verification
+        toast.success('Email verified! Now complete KYC verification.');
+        setStep('kyc');
       }
     } catch (error: any) {
       console.error('Error verifying OTP:', error);
@@ -129,6 +117,21 @@ export const VendorSignupPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleKycComplete = (data: KycData) => {
+    setKycData(data);
+    
+    // Complete vendor registration with KYC data
+    dispatch(loginSuccess({
+      id: confirmationResult ? '1' : '1',
+      email: email || phone,
+      name: data.name, // Use KYC verified name
+      role: 'vendor',
+    }));
+    
+    toast.success('Vendor account created successfully with KYC verification!');
+    navigate('/dashboard');
   };
 
   const handleResendOTP = async () => {
@@ -169,7 +172,9 @@ export const VendorSignupPage: React.FC = () => {
             <CardDescription className="text-center">
               {step === 'details' 
                 ? 'Create your vendor account to start listing equipment'
-                : 'Enter the OTP sent to verify your account'}
+                : step === 'otp'
+                ? 'Enter the OTP sent to verify your account'
+                : 'Complete mandatory KYC verification for vendor registration'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -247,7 +252,7 @@ export const VendorSignupPage: React.FC = () => {
                   {isLoading ? 'Sending OTP...' : 'Send OTP'}
                 </Button>
               </form>
-            ) : (
+            ) : step === 'otp' ? (
               <form onSubmit={handleVerifyOTP} className="space-y-6">
                 <div className="space-y-4">
                   <div className="text-center space-y-2">
@@ -308,7 +313,14 @@ export const VendorSignupPage: React.FC = () => {
                   </div>
                 </div>
               </form>
-            )}
+            ) : step === 'kyc' ? (
+              <div className="space-y-4">
+                <AadhaarKycFlow 
+                  onKycComplete={handleKycComplete}
+                  userType="vendor"
+                />
+              </div>
+            ) : null}
 
             <div className="mt-6 text-center space-y-2">
               <span className="text-sm text-muted-foreground">
