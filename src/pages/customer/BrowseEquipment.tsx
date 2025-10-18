@@ -12,11 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { BookingModal } from '@/components/bookings/BookingModal';
 
 export const BrowseEquipment: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedEquipment, setSelectedEquipment] = useState<any>(null);
 
   const equipment = [
     {
@@ -135,6 +138,11 @@ export const BrowseEquipment: React.FC = () => {
           return a.name.localeCompare(b.name);
       }
     });
+
+  const handleBookNow = (item: any) => {
+    setSelectedEquipment(item);
+    setBookingModalOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -255,8 +263,9 @@ export const BrowseEquipment: React.FC = () => {
                     </Button>
                     <Button 
                       size="sm" 
-                      variant="gradient"
+                      className="bg-gradient-primary"
                       disabled={item.availability !== 'available'}
+                      onClick={() => handleBookNow(item)}
                     >
                       <Calendar className="mr-1 h-3 w-3" />
                       {item.availability === 'available' ? 'Book Now' : 'Unavailable'}
@@ -279,6 +288,18 @@ export const BrowseEquipment: React.FC = () => {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Booking Modal */}
+      {selectedEquipment && (
+        <BookingModal
+          isOpen={bookingModalOpen}
+          onClose={() => {
+            setBookingModalOpen(false);
+            setSelectedEquipment(null);
+          }}
+          equipment={selectedEquipment}
+        />
       )}
     </div>
   );

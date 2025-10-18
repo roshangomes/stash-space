@@ -19,6 +19,7 @@ import { AddFilmGearPage } from './pages/AddFilmGearPage';
 import { CustomerDashboard } from './pages/customer/CustomerDashboard';
 import { BrowseEquipment } from './pages/customer/BrowseEquipment';
 import { MyBookings } from './pages/customer/MyBookings';
+import { VendorBookingsPage } from './pages/VendorBookingsPage';
 import { LandingPage } from './pages/LandingPage';
 import NotFound from "./pages/NotFound";
 
@@ -50,7 +51,7 @@ const App = () => (
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/inventory" element={<InventoryPage />} />
               <Route path="/inventory/add" element={<AddFilmGearPage />} />
-              <Route path="/bookings" element={<div className="p-6"><h1 className="text-2xl font-bold">Vendor Bookings</h1><p className="text-muted-foreground">Coming soon...</p></div>} />
+              <Route path="/bookings" element={<VendorBookingsPage />} />
               <Route path="/orders" element={<div className="p-6"><h1 className="text-2xl font-bold">Orders</h1><p className="text-muted-foreground">Coming soon...</p></div>} />
               <Route path="/analytics" element={<div className="p-6"><h1 className="text-2xl font-bold">Analytics</h1><p className="text-muted-foreground">Coming soon...</p></div>} />
               <Route path="/profile" element={<div className="p-6"><h1 className="text-2xl font-bold">Vendor Profile</h1><p className="text-muted-foreground">Coming soon...</p></div>} />
