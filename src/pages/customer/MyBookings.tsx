@@ -4,9 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RatingModal } from '@/components/ratings/RatingModal';
 
 export const MyBookings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('active');
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   const bookings = [
     {
@@ -115,10 +118,20 @@ export const MyBookings: React.FC = () => {
       <Star
         key={i}
         className={`h-4 w-4 ${
-          i < rating ? 'fill-current text-yellow-400' : 'text-gray-300'
+          i < rating ? 'fill-warning text-warning' : 'text-muted-foreground'
         }`}
       />
     ));
+  };
+
+  const handleLeaveReview = (booking: any) => {
+    setSelectedBooking(booking);
+    setRatingModalOpen(true);
+  };
+
+  const handleCloseRatingModal = () => {
+    setRatingModalOpen(false);
+    setSelectedBooking(null);
   };
 
   return (
@@ -216,7 +229,11 @@ export const MyBookings: React.FC = () => {
                           </>
                         )}
                         {booking.status === 'completed' && !booking.rating && (
-                          <Button variant="gradient" size="sm">
+                          <Button 
+                            className="bg-gradient-primary" 
+                            size="sm"
+                            onClick={() => handleLeaveReview(booking)}
+                          >
                             <Star className="mr-2 h-4 w-4" />
                             Leave Review
                           </Button>
@@ -258,7 +275,7 @@ export const MyBookings: React.FC = () => {
                     : "You haven't completed any bookings yet"
                   }
                 </p>
-                <Button variant="gradient" asChild>
+                <Button className="bg-gradient-primary" asChild>
                   <a href="/customer/browse">Browse Equipment</a>
                 </Button>
               </CardContent>
@@ -266,6 +283,18 @@ export const MyBookings: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Rating Modal */}
+      {selectedBooking && (
+        <RatingModal
+          isOpen={ratingModalOpen}
+          onClose={handleCloseRatingModal}
+          bookingId={selectedBooking.id}
+          equipmentName={selectedBooking.equipment}
+          otherPartyName={selectedBooking.vendor}
+          userRole="renter"
+        />
+      )}
     </div>
   );
 };
