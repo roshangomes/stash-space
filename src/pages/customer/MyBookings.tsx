@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RatingModal } from '@/components/ratings/RatingModal';
+import { EnhancedRatingModal } from '@/components/ratings/EnhancedRatingModal';
 
 export const MyBookings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('active');
@@ -286,7 +286,7 @@ export const MyBookings: React.FC = () => {
 
       {/* Rating Modal */}
       {selectedBooking && (
-        <RatingModal
+        <EnhancedRatingModal
           isOpen={ratingModalOpen}
           onClose={handleCloseRatingModal}
           bookingId={selectedBooking.id}

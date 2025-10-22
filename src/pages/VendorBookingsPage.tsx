@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, User, Package, CheckCircle, XCircle, MapPin, Truck } from 'lucide-react';
+import { Calendar, Clock, User, Package, CheckCircle, XCircle, MapPin, Truck, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +9,15 @@ import { RootState } from '@/store/store';
 import { updateBookingStatus } from '@/store/slices/bookingsSlice';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { EnhancedRatingModal } from '@/components/ratings/EnhancedRatingModal';
 
 export const VendorBookingsPage: React.FC = () => {
   const { toast } = useToast();
   const dispatch = useDispatch();
   const { bookings } = useSelector((state: RootState) => state.bookings);
   const [activeTab, setActiveTab] = useState('pending');
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   const handleAccept = (bookingId: string) => {
     dispatch(updateBookingStatus({ id: bookingId, status: 'confirmed' }));
@@ -31,6 +34,16 @@ export const VendorBookingsPage: React.FC = () => {
       description: "The renter has been notified.",
       variant: "destructive",
     });
+  };
+
+  const handleLeaveReview = (booking: any) => {
+    setSelectedBooking(booking);
+    setRatingModalOpen(true);
+  };
+
+  const handleCloseRatingModal = () => {
+    setRatingModalOpen(false);
+    setSelectedBooking(null);
   };
 
   const getFilteredBookings = (filter: string) => {
@@ -240,6 +253,18 @@ export const VendorBookingsPage: React.FC = () => {
                       </Button>
                     </div>
                   )}
+                  
+                  {booking.status === 'completed' && !(booking as any).vendorReviewed && (
+                    <div className="flex lg:flex-col gap-3 lg:w-48">
+                      <Button
+                        onClick={() => handleLeaveReview(booking)}
+                        className="flex-1"
+                      >
+                        <Star className="mr-2 h-4 w-4" />
+                        Leave Review
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -261,6 +286,18 @@ export const VendorBookingsPage: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Rating Modal */}
+      {selectedBooking && (
+        <EnhancedRatingModal
+          isOpen={ratingModalOpen}
+          onClose={handleCloseRatingModal}
+          bookingId={selectedBooking.id}
+          equipmentName={selectedBooking.equipmentName}
+          otherPartyName={selectedBooking.customerName}
+          userRole="vendor"
+        />
+      )}
     </div>
   );
 };

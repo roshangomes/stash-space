@@ -13,11 +13,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { BookingModal } from '@/components/bookings/BookingModal';
+import { VendorRatingBadge } from '@/components/ratings/VendorRatingBadge';
+import { Slider } from '@/components/ui/slider';
 
 export const BrowseEquipment: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
+  const [minRating, setMinRating] = useState([1.0]);
+  const [showFilters, setShowFilters] = useState(false);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<any>(null);
 
@@ -124,7 +128,8 @@ export const BrowseEquipment: React.FC = () => {
                            item.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            item.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
-      return matchesSearch && matchesCategory;
+      const matchesRating = item.rating >= minRating[0];
+      return matchesSearch && matchesCategory && matchesRating;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -157,41 +162,76 @@ export const BrowseEquipment: React.FC = () => {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search equipment..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search equipment..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name A-Z</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="rating">Highest Rated</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="md:w-auto"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                {showFilters ? 'Hide' : 'More'} Filters
+              </Button>
             </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name A-Z</SelectItem>
-                <SelectItem value="price-low">Price: Low to High</SelectItem>
-                <SelectItem value="price-high">Price: High to Low</SelectItem>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="pt-4 border-t space-y-4 animate-fade-in">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">
+                      Minimum Rating
+                    </label>
+                    <span className="text-sm text-muted-foreground">
+                      {minRating[0].toFixed(1)}+ <Star className="inline h-3 w-3 fill-[#FFD700] text-[#FFD700]" />
+                    </span>
+                  </div>
+                  <Slider
+                    value={minRating}
+                    onValueChange={setMinRating}
+                    min={1}
+                    max={5}
+                    step={0.1}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -239,11 +279,11 @@ export const BrowseEquipment: React.FC = () => {
                     </h3>
                     <p className="text-sm text-muted-foreground">{item.vendor}</p>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="h-3 w-3 fill-current text-yellow-400" />
-                    <span className="text-xs font-medium">{item.rating}</span>
-                    <span className="text-xs text-muted-foreground">({item.reviewCount})</span>
-                  </div>
+                  <VendorRatingBadge 
+                    rating={item.rating} 
+                    reviewCount={item.reviewCount}
+                    size="sm"
+                  />
                 </div>
                 
                 <p className="text-sm text-muted-foreground line-clamp-2">
