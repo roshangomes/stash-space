@@ -1,9 +1,25 @@
-import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { Bell, Search, User, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+/*
+  File: src/components/layout/TopNavigation.tsx
+  - Added safe checks for user data to fix 'charAt' error
+  - Added logout functionality
+*/
+import React from "react";
+// --- Import hooks and actions ---
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { RootState, AppDispatch } from "@/store/store";
+import { logout } from "@/store/slices/authSlice";
+// ---------------------------------
+import {
+  Search,
+  Bell,
+  LifeBuoy,
+  LogOut,
+  Settings,
+  User as UserIcon,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,80 +27,100 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { RootState } from '@/store/store';
-import { logout } from '@/store/slices/authSlice';
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 export const TopNavigation: React.FC = () => {
+  // Get user from Redux state
   const { user } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch();
+
+  // --- Get dispatch and navigate for logout ---
+  const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     dispatch(logout());
+    navigate("/"); // Redirect to landing page after logout
+  };
+
+  // --- SAFELY get initials ---
+  // This fixes the 'charAt' of undefined error
+  const getInitials = () => {
+    const first = user?.first_name?.charAt(0) || "";
+    const last = user?.last_name?.charAt(0) || "";
+    const initials = `${first}${last}`.toUpperCase();
+    // Return initials or a fallback icon
+    return initials || <UserIcon className="w-5 h-5" />;
+  };
+
+  // --- SAFELY get user's full name ---
+  const getFullName = () => {
+    if (!user?.first_name) {
+      return "Loading..."; // Fallback while user is loading
+    }
+    return `${user.first_name} ${user.last_name || ""}`;
+  };
+
+  // --- SAFELY get user's email ---
+  const getEmail = () => {
+    return user?.email || "...";
   };
 
   return (
-    <header className="h-16 bg-card border-b border-border shadow-soft">
-      <div className="flex items-center justify-between h-full px-6">
-        {/* Left Section */}
-        <div className="flex items-center gap-4">
-          <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-          <h1 className="text-xl font-semibold text-foreground">
-            FilmGear Pro
-          </h1>
-        </div>
+    <header className="flex h-16 items-center justify-between border-b bg-card px-6">
+      {/* Search Bar */}
+      <div className="relative w-full max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input placeholder="Search equipment, bookings..." className="pl-10" />
+      </div>
 
-        {/* Center Section - Search */}
-        <div className="flex-1 max-w-md mx-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search cameras, lenses, lighting..."
-              className="pl-10 bg-background"
-            />
-          </div>
-        </div>
+      {/* Right-side Icons & User Menu */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" className="rounded-full">
+          <Bell className="w-5 h-5" />
+        </Button>
 
-        {/* Right Section */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></span>
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user?.name.charAt(0).toUpperCase() || 'V'}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.name || 'Vendor'}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user?.email || 'vendor@example.com'}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Avatar className="h-9 w-9 cursor-pointer">
+              {/* You can add an AvatarImage if you store image URLs */}
+              {/* <AvatarImage src={user?.avatarUrl} alt="User" /> */}
+              <AvatarFallback className="font-semibold text-sm">
+                {getInitials()}
+              </AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>
+              <div className="font-medium">{getFullName()}</div>
+              <div className="text-xs text-muted-foreground font-normal">
+                {getEmail()}
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <UserIcon className="w-4 h-4 mr-2" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LifeBuoy className="w-4 h-4 mr-2" />
+              Support
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {/* --- This is the new logout item --- */}
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-destructive focus:text-destructive cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

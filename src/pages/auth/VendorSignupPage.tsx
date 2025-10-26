@@ -1,160 +1,129 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
-import { Camera, Mail, Phone } from 'lucide-react';
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { toast } from 'sonner';
-import { loginSuccess } from '@/store/slices/authSlice';
-import { AadhaarKycFlow, KycData } from '@/components/kyc/AadhaarKycFlow';
+import React, { useState, useEffect } from "react";
+// --- Import Redux thunk ---
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store/store";
+import { registerUser } from "@/store/slices/authSlice";
+// --------------------------
+import { Link, useNavigate } from "react-router-dom";
+import { Camera, Mail, Phone } from "lucide-react";
+// --- Firebase logic is paused for now ---
+// import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+// import { auth } from '@/lib/firebase';
+// ----------------------------------------
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { toast } from "sonner";
+// import { loginSuccess } from '@/store/slices/authSlice';
+// import { AadhaarKycFlow, KycData } from '@/components/kyc/AadhaarKycFlow';
 
-type SignupMethod = 'email' | 'phone';
+type SignupMethod = "email" | "phone";
 
 export const VendorSignupPage: React.FC = () => {
-  const [signupMethod, setSignupMethod] = useState<SignupMethod>('email');
-  const [step, setStep] = useState<'details' | 'otp' | 'kyc'>('details');
-  
+  const [signupMethod, setSignupMethod] = useState<SignupMethod>("email");
+  // --- Simplified step logic ---
+  // const [step, setStep] = useState<'details' | 'otp' | 'kyc'>('details');
+  // -----------------------------
+
   // Form fields
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [businessName, setBusinessName] = useState('');
-  const [otp, setOtp] = useState('');
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const [kycData, setKycData] = useState<KycData | null>(null);
-  const dispatch = useDispatch();
+  const [name, setName] = useState(""); // We'll split this into first_name, last_name
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState(""); // Added password
+  const [password2, setPassword2] = useState(""); // Added confirm password
+  // const [phone, setPhone] = useState('');
+  const [businessName, setBusinessName] = useState("");
+  // const [otp, setOtp] = useState('');
+
+  // --- Redux state ---
+  const dispatch: AppDispatch = useDispatch();
+  const { status, error } = useSelector((state: RootState) => state.auth);
+  const isLoading = status === "loading";
+  // -------------------
+
+  // const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  // const [kycData, setKycData] = useState<KycData | null>(null);
   const navigate = useNavigate();
 
-  // Setup reCAPTCHA verifier
-  useEffect(() => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => {
-          // reCAPTCHA solved
-        }
+  // --- Firebase reCAPTCHA paused ---
+  // useEffect(() => {
+  //   if (!window.recaptchaVerifier) {
+  //     window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+  //       size: 'invisible',
+  //       callback: () => { /* reCAPTCHA solved */ }
+  //     });
+  //   }
+  // }, []);
+  // ---------------------------------
+
+  // This function now handles the *entire* registration
+  const handleRegistrationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (signupMethod === "phone") {
+      toast.info("Phone signup is temporarily disabled. Please use Email.");
+      return;
+    }
+
+    // --- Validate all fields for Django ---
+    if (!name || !email || !password || !password2 || !businessName) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (password !== password2) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    // Split name into first_name and last_name for Django
+    const nameParts = name.trim().split(" ");
+    const first_name = nameParts[0];
+    const last_name = nameParts.slice(1).join(" ") || first_name; // Handle single names
+    // ----------------------------------------
+
+    // --- Dispatch the registerUser thunk ---
+    dispatch(
+      registerUser({
+        email,
+        password,
+        password2,
+        first_name,
+        last_name,
+        role: "vendor", // Hard-code the role for this page
+        // We'll need to add businessName to the backend later
+      })
+    )
+      .unwrap()
+      .then((payload) => {
+        toast.success("Registration successful!", {
+          description: `Welcome, ${payload.user.first_name}!`,
+        });
+        // We can skip KYC for now and go to dashboard
+        navigate("/dashboard");
+        // Or navigate to KYC step if needed
+        // setStep('kyc');
+      })
+      .catch((errorPayload) => {
+        toast.error("Registration failed", {
+          description: errorPayload || "An error occurred.",
+        });
       });
-    }
-  }, []);
-
-  const handleSendOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Validate fields
-    if (!name || !businessName) {
-      toast.error('Please fill in all required fields');
-      setIsLoading(false);
-      return;
-    }
-
-    if (signupMethod === 'email' && !email) {
-      toast.error('Please enter your email address');
-      setIsLoading(false);
-      return;
-    }
-
-    if (signupMethod === 'phone' && !phone) {
-      toast.error('Please enter your phone number');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      if (signupMethod === 'phone') {
-        // Firebase Phone OTP
-        const appVerifier = window.recaptchaVerifier;
-        const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier);
-        setConfirmationResult(confirmation);
-        toast.success('OTP sent to your phone number');
-        setStep('otp');
-      } else {
-        // Email OTP - Firebase doesn't support email OTP natively
-        toast.info('Email OTP requires custom backend implementation');
-        toast.success('Demo OTP sent to your email (use any 6-digit code)');
-        setStep('otp');
-      }
-    } catch (error: any) {
-      console.error('Error sending OTP:', error);
-      toast.error(error.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    if (otp.length !== 6) {
-      toast.error('Please enter a valid 6-digit OTP');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      if (signupMethod === 'phone' && confirmationResult) {
-        // Verify Firebase phone OTP
-        await confirmationResult.confirm(otp);
-        toast.success('Phone verified! Now complete KYC verification.');
-        setStep('kyc');
-      } else {
-        // Email - mock verification
-        toast.success('Email verified! Now complete KYC verification.');
-        setStep('kyc');
-      }
-    } catch (error: any) {
-      console.error('Error verifying OTP:', error);
-      toast.error('Invalid OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleKycComplete = (data: KycData) => {
-    setKycData(data);
-    
-    // Complete vendor registration with KYC data
-    dispatch(loginSuccess({
-      id: confirmationResult ? '1' : '1',
-      email: email || phone,
-      name: data.name, // Use KYC verified name
-      role: 'vendor',
-    }));
-    
-    toast.success('Vendor account created successfully with KYC verification!');
-    navigate('/dashboard');
-  };
-
-  const handleResendOTP = async () => {
-    setIsLoading(true);
-    try {
-      if (signupMethod === 'phone') {
-        const appVerifier = window.recaptchaVerifier;
-        const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier);
-        setConfirmationResult(confirmation);
-        toast.success('OTP resent to your phone number');
-      } else {
-        toast.success('OTP resent to your email');
-      }
-    } catch (error: any) {
-      toast.error('Failed to resend OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // --- All other handlers (OTP, KYC) are paused for simplicity ---
 
   return (
     <div className="min-h-screen bg-gradient-secondary flex items-center justify-center p-6">
-      <div id="recaptcha-container"></div>
+      {/* <div id="recaptcha-container"></div> */}
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
@@ -162,62 +131,67 @@ export const VendorSignupPage: React.FC = () => {
             <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-primary">
               <Camera className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-foreground">FilmGear Pro</span>
+            <span className="text-2xl font-bold text-foreground">
+              FilmGear Pro
+            </span>
           </div>
         </div>
 
         <Card className="shadow-strong bg-gradient-card border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Vendor Registration</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              Vendor Registration
+            </CardTitle>
             <CardDescription className="text-center">
-              {step === 'details' 
-                ? 'Create your vendor account to start listing equipment'
-                : step === 'otp'
-                ? 'Enter the OTP sent to verify your account'
-                : 'Complete mandatory KYC verification for vendor registration'}
+              Create your vendor account to start listing equipment
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {step === 'details' ? (
-              <form onSubmit={handleSendOTP} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="h-12"
-                  />
-                </div>
+            {/* --- We are only showing the 'details' step --- */}
+            <form onSubmit={handleRegistrationSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="h-12"
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="businessName">Business Name</Label>
-                  <Input
-                    id="businessName"
-                    type="text"
-                    placeholder="Your Business Name"
-                    value={businessName}
-                    onChange={(e) => setBusinessName(e.target.value)}
-                    required
-                    className="h-12"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="businessName">Business Name</Label>
+                <Input
+                  id="businessName"
+                  type="text"
+                  placeholder="Your Business Name"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  required
+                  className="h-12"
+                />
+              </div>
 
-                <Tabs value={signupMethod} onValueChange={(v) => setSignupMethod(v as SignupMethod)} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="email" className="gap-2">
-                      <Mail className="w-4 h-4" />
-                      Email
-                    </TabsTrigger>
-                    <TabsTrigger value="phone" className="gap-2">
-                      <Phone className="w-4 h-4" />
-                      Phone
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="email" className="space-y-2 mt-4">
+              <Tabs
+                value={signupMethod}
+                onValueChange={(v) => setSignupMethod(v as SignupMethod)}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="email" className="gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email
+                  </TabsTrigger>
+                  <TabsTrigger value="phone" className="gap-2" disabled>
+                    <Phone className="w-4 h-4" />
+                    Phone (soon)
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="email" className="space-y-4 mt-4">
+                  <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <Input
                       id="email"
@@ -228,110 +202,66 @@ export const VendorSignupPage: React.FC = () => {
                       required
                       className="h-12"
                     />
-                  </TabsContent>
-                  <TabsContent value="phone" className="space-y-2 mt-4">
-                    <Label htmlFor="phone">Phone Number</Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
                     <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      id="password"
+                      type="password"
+                      placeholder="Create a password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                       className="h-12"
                     />
-                  </TabsContent>
-                </Tabs>
-
-                <Button
-                  type="submit"
-                  className="w-full h-12"
-                  variant="gradient"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Sending OTP...' : 'Send OTP'}
-                </Button>
-              </form>
-            ) : step === 'otp' ? (
-              <form onSubmit={handleVerifyOTP} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="text-center space-y-2">
-                    <Label>Enter 6-Digit OTP</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Sent to {signupMethod === 'email' ? email : phone}
-                    </p>
                   </div>
-                  <div className="flex justify-center">
-                    <InputOTP
-                      maxLength={6}
-                      value={otp}
-                      onChange={(value) => setOtp(value)}
-                    >
-                      <InputOTPGroup>
-                        <InputOTPSlot index={0} />
-                        <InputOTPSlot index={1} />
-                        <InputOTPSlot index={2} />
-                        <InputOTPSlot index={3} />
-                        <InputOTPSlot index={4} />
-                        <InputOTPSlot index={5} />
-                      </InputOTPGroup>
-                    </InputOTP>
+                  <div className="space-y-2">
+                    <Label htmlFor="password2">Confirm Password</Label>
+                    <Input
+                      id="password2"
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={password2}
+                      onChange={(e) => setPassword2(e.target.value)}
+                      required
+                      className="h-12"
+                    />
                   </div>
-                </div>
+                </TabsContent>
+                <TabsContent value="phone" className="space-y-2 mt-4">
+                  {/* Phone input logic paused */}
+                </TabsContent>
+              </Tabs>
 
-                <Button
-                  type="submit"
-                  className="w-full h-12"
-                  variant="gradient"
-                  disabled={isLoading || otp.length !== 6}
-                >
-                  {isLoading ? 'Verifying...' : 'Verify & Create Account'}
-                </Button>
+              <Button
+                type="submit"
+                className="w-full h-12"
+                variant="gradient"
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating Account..." : "Create Vendor Account"}
+              </Button>
+            </form>
+            {/* --- End of 'details' form --- */}
 
-                <div className="text-center space-y-2">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={handleResendOTP}
-                    disabled={isLoading}
-                    className="text-sm"
-                  >
-                    Resend OTP
-                  </Button>
-                  <div>
-                    <Button
-                      type="button"
-                      variant="link"
-                      onClick={() => {
-                        setStep('details');
-                        setOtp('');
-                      }}
-                      className="text-sm"
-                    >
-                      Change {signupMethod === 'email' ? 'email' : 'phone number'}
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            ) : step === 'kyc' ? (
-              <div className="space-y-4">
-                <AadhaarKycFlow 
-                  onKycComplete={handleKycComplete}
-                  userType="vendor"
-                />
-              </div>
-            ) : null}
+            {/* --- All other steps (OTP, KYC) are hidden for now --- */}
 
             <div className="mt-6 text-center space-y-2">
               <span className="text-sm text-muted-foreground">
-                Already have an account?{' '}
-                <Link to="/vendor/login" className="text-primary hover:underline font-medium">
+                Already have an account?{" "}
+                <Link
+                  to="/vendor/login"
+                  className="text-primary hover:underline font-medium"
+                >
                   Sign in
                 </Link>
               </span>
               <div className="text-sm text-muted-foreground">
-                Are you a customer?{' '}
-                <Link to="/customer/signup" className="text-primary hover:underline font-medium">
+                Are you a customer?{" "}
+                <Link
+                  to="/customer/signup"
+                  className="text-primary hover:underline font-medium"
+                >
                   Customer Registration
                 </Link>
               </div>
