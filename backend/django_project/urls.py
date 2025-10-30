@@ -8,4 +8,5 @@ urlpatterns = [
     # --- Add this line ---
     # This will make our user auth URLs available at /api/...
     path('api/', include('users.urls')),
+    path('api/kyc/', include('kyc.urls')),
 ]

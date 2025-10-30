@@ -1,13 +1,33 @@
+/*
+  File: src/store/slices/authSlice.ts
+  - This is the fully updated file with the 'submitKyc' thunk.
+*/
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { API_URL } from "@/lib/apiConfig";
+
+// --- ADDED: Interface for KYC data ---
+// This must match the interface in AadhaarKycFlow.tsx
+export interface KycData {
+  aadhaarNumber: string;
+  isVerified: boolean;
+  name: string;
+  dob: string;
+  address: string;
+  verificationTimestamp: string;
+}
+// ------------------------------------
 
 // Define the shape of the user object
 interface User {
   id: string;
   email: string;
-  first_name: string; // Django sends snake_case
-  last_name: string; // Django sends snake_case
+  first_name: string;
+  last_name: string;
   role: "vendor" | "customer" | "admin";
+  // --- ADDED: New fields from CustomUser model ---
+  business_name: string | null;
+  is_kyc_verified: boolean;
+  // ---------------------------------------------
 }
 
 // Define the shape of the auth tokens
@@ -38,6 +58,9 @@ interface RegisterData {
   first_name: string;
   last_name: string;
   role: "vendor" | "customer" | "admin";
+  // --- ADDED: business_name for vendor signup ---
+  business_name?: string;
+  // --------------------------------------------
 }
 
 interface ApiResponse {
@@ -60,7 +83,6 @@ const initialState: AuthState = {
 };
 
 // --- Async Thunk for User Login ---
-// This will be called from your LoginPage.tsx
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (loginData: LoginData, { rejectWithValue }) => {
@@ -93,6 +115,7 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+// --- Async Thunk for User Registration ---
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (registerData: RegisterData, { rejectWithValue }) => {
@@ -129,12 +152,51 @@ export const registerUser = createAsyncThunk(
   }
 );
 
+// --- ADDED: Async Thunk for Submitting KYC ---
+export const submitKyc = createAsyncThunk(
+  "auth/submitKyc",
+  async (kycData: KycData, { getState, rejectWithValue }) => {
+    // Get the auth token from our own state
+    const state = (getState() as { auth: AuthState }).auth;
+    const token = state.tokens?.access;
+
+    if (!token) {
+      return rejectWithValue("No auth token found. Please log in.");
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/kyc/submit/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Include the auth token
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(kycData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.detail || "KYC submission failed");
+      }
+
+      const data = await response.json();
+      // On success, we just return the KYC data
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "An unknown error occurred"
+      );
+    }
+  }
+);
+// -------------------------------------------
+
 // --- The Auth Slice ---
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    // Standard reducer for logging out
     logout: (state) => {
       state.user = null;
       state.tokens = null;
@@ -142,7 +204,6 @@ const authSlice = createSlice({
       localStorage.removeItem("user");
       localStorage.removeItem("tokens");
     },
-    // You can keep your original loginSuccess if needed for other things
     loginSuccess: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
@@ -159,7 +220,7 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.isAuthenticated = true;
-        state.user = action.payload.user; // User object from Django
+        state.user = action.payload.user;
         state.tokens = {
           access: action.payload.access,
           refresh: action.payload.refresh,
@@ -178,7 +239,7 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.isAuthenticated = true;
-        state.user = action.payload.user; // User object from Django
+        state.user = action.payload.user;
         state.tokens = {
           access: action.payload.access,
           refresh: action.payload.refresh,
@@ -187,12 +248,29 @@ const authSlice = createSlice({
       .addCase(registerUser.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;
+      })
+
+      // --- ADDED: KYC Submission Cases ---
+      .addCase(submitKyc.pending, (state) => {
+        state.status = "loading"; // Use auth loading state
+        state.error = null;
+      })
+      .addCase(submitKyc.fulfilled, (state) => {
+        state.status = "succeeded";
+        if (state.user) {
+          // Manually update the user's KYC status in Redux
+          state.user.is_kyc_verified = true;
+          // Also update the user in localStorage
+          localStorage.setItem("user", JSON.stringify(state.user));
+        }
+      })
+      .addCase(submitKyc.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
       });
+    // -------------------------------------
   },
 });
 
-// Export the actions
 export const { logout, loginSuccess } = authSlice.actions;
-
-// Export the reducer
 export default authSlice.reducer;

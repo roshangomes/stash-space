@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 
     # --- ADDED Your New 'users' App ---
     'users',
+    'kyc',
 ]
 
 MIDDLEWARE = [

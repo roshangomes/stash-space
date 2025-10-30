@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-// --- Import Redux thunk ---
+// --- Import Redux thunks ---
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/store";
-import { registerUser } from "@/store/slices/authSlice";
+import { registerUser, submitKyc } from "@/store/slices/authSlice"; // <-- Import both
 // --------------------------
 import { Link, useNavigate } from "react-router-dom";
 import { Camera, Mail, Phone } from "lucide-react";
-// --- Firebase logic is paused for now ---
+// --- Firebase logic is no longer needed ---
 // import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 // import { auth } from '@/lib/firebase';
 // ----------------------------------------
@@ -21,50 +21,39 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+// import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'; // Not needed for now
 import { toast } from "sonner";
-// import { loginSuccess } from '@/store/slices/authSlice';
-// import { AadhaarKycFlow, KycData } from '@/components/kyc/AadhaarKycFlow';
+// --- Import KYC components ---
+import { AadhaarKycFlow, KycData } from "@/components/kyc/AadhaarKycFlow";
 
 type SignupMethod = "email" | "phone";
 
 export const VendorSignupPage: React.FC = () => {
   const [signupMethod, setSignupMethod] = useState<SignupMethod>("email");
-  // --- Simplified step logic ---
-  // const [step, setStep] = useState<'details' | 'otp' | 'kyc'>('details');
-  // -----------------------------
+  // --- Re-introduce the 'step' state ---
+  const [step, setStep] = useState<"details" | "kyc">("details");
+  // ------------------------------------
 
   // Form fields
-  const [name, setName] = useState(""); // We'll split this into first_name, last_name
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState(""); // Added password
   const [password2, setPassword2] = useState(""); // Added confirm password
-  // const [phone, setPhone] = useState('');
   const [businessName, setBusinessName] = useState("");
-  // const [otp, setOtp] = useState('');
+  // const [phone, setPhone] = useState(''); // Paused phone
+  // const [otp, setOtp] = useState(''); // Paused OTP
 
   // --- Redux state ---
   const dispatch: AppDispatch = useDispatch();
-  const { status, error } = useSelector((state: RootState) => state.auth);
+  const { status } = useSelector((state: RootState) => state.auth);
   const isLoading = status === "loading";
   // -------------------
 
-  // const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  // const [kycData, setKycData] = useState<KycData | null>(null);
   const navigate = useNavigate();
 
-  // --- Firebase reCAPTCHA paused ---
-  // useEffect(() => {
-  //   if (!window.recaptchaVerifier) {
-  //     window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-  //       size: 'invisible',
-  //       callback: () => { /* reCAPTCHA solved */ }
-  //     });
-  //   }
-  // }, []);
-  // ---------------------------------
+  // --- Firebase logic is removed ---
 
-  // This function now handles the *entire* registration
+  // Step 1: Register the user with Django
   const handleRegistrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -73,7 +62,6 @@ export const VendorSignupPage: React.FC = () => {
       return;
     }
 
-    // --- Validate all fields for Django ---
     if (!name || !email || !password || !password2 || !businessName) {
       toast.error("Please fill in all fields");
       return;
@@ -84,13 +72,10 @@ export const VendorSignupPage: React.FC = () => {
       return;
     }
 
-    // Split name into first_name and last_name for Django
     const nameParts = name.trim().split(" ");
     const first_name = nameParts[0];
-    const last_name = nameParts.slice(1).join(" ") || first_name; // Handle single names
-    // ----------------------------------------
+    const last_name = nameParts.slice(1).join(" ") || first_name;
 
-    // --- Dispatch the registerUser thunk ---
     dispatch(
       registerUser({
         email,
@@ -98,19 +83,18 @@ export const VendorSignupPage: React.FC = () => {
         password2,
         first_name,
         last_name,
-        role: "vendor", // Hard-code the role for this page
-        // We'll need to add businessName to the backend later
+        role: "vendor",
+        business_name: businessName, // Send business_name
       })
     )
       .unwrap()
       .then((payload) => {
-        toast.success("Registration successful!", {
-          description: `Welcome, ${payload.user.first_name}!`,
+        toast.success("Account created!", {
+          description: `Welcome, ${payload.user.first_name}! Please complete KYC.`,
         });
-        // We can skip KYC for now and go to dashboard
-        navigate("/dashboard");
-        // Or navigate to KYC step if needed
-        // setStep('kyc');
+        // --- On success, go to KYC step ---
+        setStep("kyc");
+        // ----------------------------------
       })
       .catch((errorPayload) => {
         toast.error("Registration failed", {
@@ -119,7 +103,24 @@ export const VendorSignupPage: React.FC = () => {
       });
   };
 
-  // --- All other handlers (OTP, KYC) are paused for simplicity ---
+  // Step 2: Handle KYC completion
+  const handleKycComplete = (data: KycData) => {
+    // Dispatch the new 'submitKyc' thunk
+    dispatch(submitKyc(data))
+      .unwrap()
+      .then(() => {
+        toast.success("KYC Verified!", {
+          description: "Your vendor account is now fully active.",
+        });
+        // Now, finally, navigate to the dashboard
+        navigate("/dashboard");
+      })
+      .catch((errorPayload) => {
+        toast.error("KYC Submission Failed", {
+          description: errorPayload || "Please try again.",
+        });
+      });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-secondary flex items-center justify-center p-6">
@@ -143,108 +144,121 @@ export const VendorSignupPage: React.FC = () => {
               Vendor Registration
             </CardTitle>
             <CardDescription className="text-center">
-              Create your vendor account to start listing equipment
+              {step === "details"
+                ? "Create your vendor account (Step 1 of 2)"
+                : "Complete mandatory KYC (Step 2 of 2)"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* --- We are only showing the 'details' step --- */}
-            <form onSubmit={handleRegistrationSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="h-12"
+            {/* --- Step 1: Details Form --- */}
+            {step === "details" && (
+              <form onSubmit={handleRegistrationSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="John Doe"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="businessName">Business Name</Label>
+                  <Input
+                    id="businessName"
+                    type="text"
+                    placeholder="Your Business Name"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    required
+                    className="h-12"
+                  />
+                </div>
+
+                <Tabs
+                  value={signupMethod}
+                  onValueChange={(v) => setSignupMethod(v as SignupMethod)}
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="email" className="gap-2">
+                      <Mail className="w-4 h-4" />
+                      Email
+                    </TabsTrigger>
+                    <TabsTrigger value="phone" className="gap-2" disabled>
+                      <Phone className="w-4 h-4" />
+                      Phone (soon)
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="email" className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="vendor@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="h-12"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Create a password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="h-12"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password2">Confirm Password</Label>
+                      <Input
+                        id="password2"
+                        type="password"
+                        placeholder="Confirm your password"
+                        value={password2}
+                        onChange={(e) => setPassword2(e.target.value)}
+                        required
+                        className="h-12"
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <Button
+                  type="submit"
+                  className="w-full h-12"
+                  variant="gradient"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Creating Account..." : "Continue to KYC"}
+                </Button>
+              </form>
+            )}
+
+            {/* --- Step 2: KYC Form --- */}
+            {step === "kyc" && (
+              <div className="space-y-4">
+                <AadhaarKycFlow
+                  onKycComplete={handleKycComplete}
+                  userType="vendor"
                 />
+                {isLoading && (
+                  <p className="text-sm text-center text-muted-foreground">
+                    Submitting KYC data...
+                  </p>
+                )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="businessName">Business Name</Label>
-                <Input
-                  id="businessName"
-                  type="text"
-                  placeholder="Your Business Name"
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  required
-                  className="h-12"
-                />
-              </div>
-
-              <Tabs
-                value={signupMethod}
-                onValueChange={(v) => setSignupMethod(v as SignupMethod)}
-                className="w-full"
-              >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="email" className="gap-2">
-                    <Mail className="w-4 h-4" />
-                    Email
-                  </TabsTrigger>
-                  <TabsTrigger value="phone" className="gap-2" disabled>
-                    <Phone className="w-4 h-4" />
-                    Phone (soon)
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="email" className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="vendor@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="h-12"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Create a password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="h-12"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password2">Confirm Password</Label>
-                    <Input
-                      id="password2"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={password2}
-                      onChange={(e) => setPassword2(e.target.value)}
-                      required
-                      className="h-12"
-                    />
-                  </div>
-                </TabsContent>
-                <TabsContent value="phone" className="space-y-2 mt-4">
-                  {/* Phone input logic paused */}
-                </TabsContent>
-              </Tabs>
-
-              <Button
-                type="submit"
-                className="w-full h-12"
-                variant="gradient"
-                disabled={isLoading}
-              >
-                {isLoading ? "Creating Account..." : "Create Vendor Account"}
-              </Button>
-            </form>
-            {/* --- End of 'details' form --- */}
-
-            {/* --- All other steps (OTP, KYC) are hidden for now --- */}
+            )}
 
             <div className="mt-6 text-center space-y-2">
               <span className="text-sm text-muted-foreground">
@@ -256,15 +270,6 @@ export const VendorSignupPage: React.FC = () => {
                   Sign in
                 </Link>
               </span>
-              <div className="text-sm text-muted-foreground">
-                Are you a customer?{" "}
-                <Link
-                  to="/customer/signup"
-                  className="text-primary hover:underline font-medium"
-                >
-                  Customer Registration
-                </Link>
-              </div>
             </div>
           </CardContent>
         </Card>
